@@ -4,8 +4,27 @@ const router = express.Router()
 
 // ALL Authors Route
 router.get('/', (req, res) => {
-  res.render('authors/index')
-}) // root of application
+  console.log('HELLLLLLLLLO')
+  let searchOptions = {}
+  //query is the url/ query string
+  //case insensitive 'i'
+  if (req.query.name != null && req.query.anme !== '') {
+    //regukar exprestions lets you search part of the words not just words
+    searchOptions.name = new RegExp(req.query.name, 'i')
+  }
+  Author.find(searchOptions)
+    .then((authors) => {
+      res.render('authors/index', {
+        authors: authors,
+        searchOptions: req.query,
+      })
+    })
+    .catch((err) => {
+      res.redirect('/')
+    })
+})
+
+// root of application
 
 //New Author Route
 router.get('/new', (req, res) => {
@@ -18,16 +37,19 @@ router.post('/', (req, res) => {
     name: req.body.name,
   })
   console.log(author)
-  try{
-const newAuthor = await author.save()
-   // res.redirect(`authours/${newAuthor.id}`)
+  author
+    .save()
+    .then((newAuthor) => {
+      // res.redirect(`authours/${newAuthor.id}`)
       res.redirect('authors')
-  } catch{
-         res.render('authors/new', {
+    })
+    .catch((err) => {
+      console.log(err)
+      res.render('authors/new', {
         author: author,
         errorMessage: 'Error creating Author',
-      })   
-  }
+      })
+    })
 
   // author.save((err, newAuthor) => {
   //   if (err) {
