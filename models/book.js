@@ -1,6 +1,7 @@
 //always signular version of routes
 
 const mongoose = require('mongoose')
+const coverImageBasePath = 'uploads/bookCover' //folder to store images
 const bookSchema = new mongoose.Schema({
   title: {
     type: String,
@@ -34,3 +35,4 @@ const bookSchema = new mongoose.Schema({
 })
 
 module.exports = mongoose.model('Book', bookSchema)
+module.exports.coverImageBasePath = coverImageBasePath  
