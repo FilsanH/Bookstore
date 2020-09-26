@@ -10,6 +10,7 @@ const bodyParser = require('body-parser')
 
 const indexRouter = require('./routes/index')
 const authorRouter = require('./routes/authors')
+const bookRouter = require('./routes/books')
 app.set('view engine', 'ejs')
 app.set('views', __dirname + '/views')
 app.set('layout', 'layouts/layout')
@@ -27,4 +28,5 @@ const db = mongoose.connection
 
 app.use('/', indexRouter)
 app.use('/authors', authorRouter) //prefix authors route
+app.use('/books', bookRouter)
 app.listen(process.env.PORT || 3000)
