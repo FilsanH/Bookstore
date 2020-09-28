@@ -1,5 +1,5 @@
 //always signular version of routes
-
+const path = require('path')
 const mongoose = require('mongoose')
 const coverImageBasePath = 'uploads/bookCover' //folder to store images
 const bookSchema = new mongoose.Schema({
@@ -34,5 +34,12 @@ const bookSchema = new mongoose.Schema({
   },
 })
 
+//do this so that you can acced coverimagepath as though it is a property of book. use virtual schema when want to make a new property from existsing properties
+bookSchema.virtual('coverImagePath').get(function () {
+  if (this.coverImageName != null) {
+    return path.join('/', coverImageBasePath)
+  }
+})
+
 module.exports = mongoose.model('Book', bookSchema)
-module.exports.coverImageBasePath = coverImageBasePath  
+module.exports.coverImageBasePath = coverImageBasePath

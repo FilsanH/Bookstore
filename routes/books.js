@@ -7,6 +7,7 @@ const path = require('path')
 const uploadPath = path.join('public', Book.coverImageBasePath)
 const imageMineTypes = ['image/jpeg', 'image/png', 'image/gif']
 const multer = require('multer')
+const book = require('../models/book')
 const upload = multer({
   dest: uploadPath,
   fileFilter: (req, file, callback) => {
@@ -15,11 +16,33 @@ const upload = multer({
   },
 })
 
-//All Books Route
-router.get('/', async (req, res) => {
-  res.send('All Books')
-})
+//All Books
+router.get('/', (req, res) => {
+  //make it so that the loaded books change according to the title search/ change dynamically
+  let query = Book.find()
+  if (req.query.title != null && req.query.title != '') {
+    query = query.regex('title', new RegExp(req.query.title, 'i'))
+  }
+  if (req.query.publishedBefore != null && req.query.publishedBefore != '') {
+    query = query.lte('pubishDate', req.query.publishedBefore)
+  }
+  if (req.query.publishedAfter != null && req.query.publishedAfter != '') {
+    query = query.lte('pubishDate', req.query.publishedAfter)
+  }
 
+  query
+    .exec()
+    .then((books) => {
+      console.log(books)
+      res.render('books/index', {
+        books: books,
+        searchOptions: req.query,
+      })
+    })
+    .catch((err) => {
+      res.redirect('/')
+    })
+})
 //New Book route
 router.get('/new', (req, res) => {
   const book = new Book() //create new book then the forms fills it out and the details will then be saved in the post route of the form
@@ -41,7 +64,6 @@ router.get('/new', (req, res) => {
 //tells multer that you uploading a single file of the name 'cover'
 router.post('/', upload.single('cover'), (req, res) => {
   console.log(req.file)
-  console.log('HERERERR')
 
   const fileName = req.file != null ? req.file.filename : null
   const book = new Book({
@@ -88,4 +110,5 @@ function removeBookcover(fileName) {
     }
   })
 }
+
 module.exports = router
