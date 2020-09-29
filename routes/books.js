@@ -8,6 +8,7 @@ const uploadPath = path.join('public', Book.coverImageBasePath)
 const imageMineTypes = ['image/jpeg', 'image/png', 'image/gif']
 // const multer = require('multer')
 const book = require('../models/book')
+const { render } = require('ejs')
 // const upload = multer({
 //   dest: uploadPath,
 //   fileFilter: (req, file, callback) => {
@@ -78,7 +79,7 @@ router.post('/', (req, res) => {
   book
     .save()
     .then((newBook) => {
-      res.redirect('books')
+      res.redirect(`books/${newBook.id}`)
     })
     .catch((err) => {
       console.log(err)
@@ -103,6 +104,102 @@ router.post('/', (req, res) => {
   //upload book file into actual book model
 })
 
+// Show Book Route
+router.get('/:id', (req, res) => {
+  //populates the author varible with the book id info
+  Book.findById(req.params.id)
+    .populate('author') //populate makes it so that it returns the author not just author id so can say book.author.id
+    .then((book) => {
+      res.render('books/show', { book: book })
+    })
+    .catch((err) => {
+      res.redirect('/')
+    })
+})
+
+// Edit Book Route
+router.get('/:id/edit', (req, res) => {
+  Book.findById(req.params.id).then((book) => {
+    Author.find({})
+      .then((authors) => {
+        // finds all books
+        // console.log('HERERERR')
+        res.render('books/edit', {
+          authors: authors,
+          book: book,
+          errorMessage: 'Error Editing Book',
+        })
+      })
+      .catch((err) => {
+        // console.log('books')
+        res.redirect('/books')
+      })
+  })
+})
+
+//UPDATE Route
+router.put('/:id', (req, res) => {
+  Book.findById(req.params.id)
+    .then((book) => {
+      book.title = req.body.title
+      book.author = req.body.author
+      book.publishDate = new Date(req.body.publishDate)
+      book.pageCount = req.body.pageCount
+      // coverImageName: fileName,
+      book.description = req.body.description
+
+      if (req.body.cover != null && req.body.cover !== '') {
+        saveCover(book, req.body.cover)
+      }
+      res.redirect(`/books/${book.id}`)
+    })
+    .catch((err) => {
+      console.log(err)
+      if (book != null) {
+        Book.findById(req.params.id).then((book) => {
+          Author.find({})
+            .then((authors) => {
+              // finds all books
+              // console.log('HERERERR')
+              res.render('books/edit', {
+                authors: authors,
+                book: book,
+                errorMessage: 'Error updating  Book',
+              })
+            })
+            .catch((err) => {
+              // console.log('books')
+              res.redirect('/books')
+            })
+        })
+      } else {
+        res.redirect('/')
+      }
+    })
+})
+
+//DELETE Book Route
+
+router.delete('/:id', (req, res) => {
+  Book.findById(req.params.id)
+    .then((book) => {
+      book
+        .remove()
+        .then((res) => {
+          res.redirect('/books')
+        })
+        .catch((err) => {
+          res.render('books/show', {
+            book: book,
+            errorMessage: 'Could not remove book',
+          })
+        })
+    })
+    .catch((err) => {
+      res.redirect('/')
+    })
+})
+//upload book file into actual book model
 function saveCover(book, coverEncoded) {
   if (coverEncoded == null) return
   const cover = JSON.parse(coverEncoded)
