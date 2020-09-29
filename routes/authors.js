@@ -1,5 +1,6 @@
 const express = require('express')
 const Author = require('../models/author')
+const Book = require('../models/book')
 const router = express.Router()
 
 // ALL Authors Route
@@ -25,7 +26,6 @@ router.get('/', (req, res) => {
 })
 
 // root of application
-
 //New Author Route
 router.get('/new', (req, res) => {
   res.render('authors/new', { author: new Author() })
@@ -40,8 +40,8 @@ router.post('/', (req, res) => {
   author
     .save()
     .then((newAuthor) => {
-      // res.redirect(`authours/${newAuthor.id}`)
-      res.redirect('authors')
+      res.redirect(`authors/${newAuthor.id}`)
+      // res.redirect('authors')
     })
     .catch((err) => {
       console.log(err)
@@ -63,4 +63,77 @@ router.post('/', (req, res) => {
   //   }
   // })
 })
+router.get('/:id', (req, res) => {
+  Author.findById(req.params.id)
+    .then((author) => {
+      Book.find({ author: author.id })
+        .limit(6)
+        .then((books) => {
+          res.render('authors/show', {
+            author: author,
+            booksByAuthor: books,
+          })
+        })
+        .catch((err) => {
+          console.log(err)
+          res.redirect('/')
+        })
+    })
+    .catch((err) => {
+      console.log(err)
+      res.redirect('/')
+    })
+})
+router.get('/:id/edit', (req, res) => {
+  Author.findById(req.params.id)
+    .then((author) => {
+      res.render('authors/edit', { author: author })
+    })
+    .catch((err) => {
+      res.redirect('/authors')
+    })
+})
+
+// Update Route
+router.put('/:id', (req, res) => {
+  Author.findById(req.params.id).then((author) => {
+    author.name = req.body.name
+
+    author
+      .save()
+      .then(() => {
+        res.redirect(`/authors/${author.id}`)
+      })
+      .catch((err) => {
+        console.log(err)
+        res.render('authors/new', {
+          author: author,
+          errorMessage: 'Error creating Author',
+        })
+      })
+      .catch((err) => {
+        res.redirect('/')
+      })
+  })
+})
+
+//never use delete to delete something
+router.delete('/:id', (req, res) => {
+  //constraint should not be able to delte an author without also deleting the books it is associated with
+  Author.findById(req.params.id).then((author) => {
+    author
+      .remove()
+      .then(() => {
+        res.redirect(`/authors`)
+      })
+      .catch((err) => {
+        console.log(err)
+        res.redirect(`/`)
+      })
+      .catch((err) => {
+        res.redirect(`/authors/${author.id}`)
+      })
+  })
+})
+
 module.exports = router
