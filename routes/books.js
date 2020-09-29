@@ -6,15 +6,15 @@ const Author = require('../models/author')
 const path = require('path')
 const uploadPath = path.join('public', Book.coverImageBasePath)
 const imageMineTypes = ['image/jpeg', 'image/png', 'image/gif']
-const multer = require('multer')
+// const multer = require('multer')
 const book = require('../models/book')
-const upload = multer({
-  dest: uploadPath,
-  fileFilter: (req, file, callback) => {
-    callback(null, imageMineTypes.includes(file.mimetype))
-    //filter files to accept
-  },
-})
+// const upload = multer({
+//   dest: uploadPath,
+//   fileFilter: (req, file, callback) => {
+//     callback(null, imageMineTypes.includes(file.mimetype))
+//     //filter files to accept
+//   },
+// })
 
 //All Books
 router.get('/', (req, res) => {
@@ -62,7 +62,7 @@ router.get('/new', (req, res) => {
 
 //Create Book route
 //tells multer that you uploading a single file of the name 'cover'
-router.post('/', upload.single('cover'), (req, res) => {
+router.post('/', (req, res) => {
   console.log(req.file)
 
   const fileName = req.file != null ? req.file.filename : null
@@ -71,10 +71,10 @@ router.post('/', upload.single('cover'), (req, res) => {
     author: req.body.author,
     publishDate: new Date(req.body.publishDate),
     pageCount: req.body.pageCount,
-    coverImageName: fileName,
+    // coverImageName: fileName,
     description: req.body.description,
   })
-
+  saveCover(book, req.body.cover)
   book
     .save()
     .then((newBook) => {
@@ -82,13 +82,13 @@ router.post('/', upload.single('cover'), (req, res) => {
     })
     .catch((err) => {
       console.log(err)
-      if (book.coverImageName) {
-        removeBookcover(book.coverImageName)
-      }
+      // if (book.coverImageName) {
+      //   removeBookcover(book.coverImageName)
+      // }
       Author.find({})
         .then((authors) => {
           // finds all books
-          console.log('HERERERR')
+          // console.log('HERERERR')
           res.render('books/new', {
             authors: authors,
             book: book,
@@ -96,19 +96,29 @@ router.post('/', upload.single('cover'), (req, res) => {
           })
         })
         .catch((err) => {
-          console.log('books')
+          // console.log('books')
           res.redirect('/books')
         })
     })
+  //upload book file into actual book model
 })
 
-function removeBookcover(fileName) {
-  // remove the bookcover with the error in it
-  fs.unlink(path.join(uploadPath, fileName), (errr) => {
-    if (err) {
-      console.log(err)
-    }
-  })
+function saveCover(book, coverEncoded) {
+  if (coverEncoded == null) return
+  const cover = JSON.parse(coverEncoded)
+  if (cover != null && imageMineTypes.includes(cover.type)) {
+    book.coverImage = new Buffer.from(cover.data, 'base64') //creates a buffer
+    book.coverImageType = cover.type
+  }
 }
+//file is now uploaded in json format as usinf fileuploadpluggin to save the file, the pluggin lets you preview files and save the actual image into the database so that upon each refresh the public folder doesn't empty
+// function removeBookcover(fileName) {
+//   // remove the bookcover with the error in it
+//   fs.unlink(path.join(uploadPath, fileName), (errr) => {
+//     if (err) {
+//       console.log(err)
+//     }
+//   })
+// }
 
 module.exports = router
